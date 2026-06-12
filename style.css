@@ -4,20 +4,29 @@
   padding: 0;
 }
 
-body {
+html, body {
+  width: 100%;
+  height: 100%;
   background: #000;
+  overflow: hidden;
+}
+
+body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;
-  overflow: hidden;
   touch-action: none;
 }
 
 #gameCanvas {
   display: block;
-  /* Scale to fit viewport, maintain 9:16 portrait ratio */
-  width: min(360px, 56.25vh, 100vw);
+  /*
+    画面いっぱいに広げる（9:16 比率を維持）
+    - 100vw  : 横幅を超えない
+    - 56.25dvh: 縦幅いっぱいにしたときの横幅 (= dvh * 9/16)
+    dvh = Dynamic Viewport Height（アドレスバーの有無を考慮）
+  */
+  width: min(100vw, 56.25dvh);
   aspect-ratio: 9 / 16;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
