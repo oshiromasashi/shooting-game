@@ -5,11 +5,27 @@ class AudioManager {
     this._ac = null;
     this._master = null;
     this._bgm = null;
+    this._unlocked = false;
     // Preload both tracks
     this._tracks = {
       normal: Object.assign(new Audio('bgm.mp3'),  { loop: true, volume: 0.5 }),
       boss:   Object.assign(new Audio('bgm2.mp3'), { loop: true, volume: 0.5 }),
     };
+  }
+
+  // iOS では最初のユーザー操作内で play() を呼ばないと以降も再生できない
+  unlock() {
+    if (this._unlocked) return;
+    this._unlocked = true;
+    Object.values(this._tracks).forEach(track => {
+      track.play().then(() => {
+        // 現在再生すべきトラック以外はすぐ止める
+        if (this._bgm !== track) {
+          track.pause();
+          track.currentTime = 0;
+        }
+      }).catch(() => {});
+    });
   }
 
   _init() {

@@ -520,6 +520,7 @@ class Game {
     this.ctx = canvas.getContext('2d');
     this.keys = new Set();
     this.touchPos = null;
+    this._touchingPlayer = false;
     this.state = 'start';
     this.score = 0;
     this.hiScore = 0;
@@ -571,7 +572,7 @@ class Game {
     const opts = { passive: false };
     canvas.addEventListener('touchstart', e => { e.preventDefault(); this._onTouchStart(e); }, opts);
     canvas.addEventListener('touchmove',  e => { e.preventDefault(); this._onTouchMove(e);  }, opts);
-    canvas.addEventListener('touchend',   e => { e.preventDefault(); this.touchPos = null;  }, opts);
+    canvas.addEventListener('touchend',   e => { e.preventDefault(); this.touchPos = null; this._touchingPlayer = false; }, opts);
 
     canvas.setAttribute('tabindex', '0');
     canvas.focus();
@@ -585,7 +586,17 @@ class Game {
     }
   }
 
+  _isTouchOnPlayer(tx, ty) {
+    const p = this.player;
+    const margin = 24;
+    return tx >= p.x - p.w / 2 - margin && tx <= p.x + p.w / 2 + margin &&
+           ty >= p.y - p.h / 2 - margin && ty <= p.y + p.h / 2 + margin;
+  }
+
   _onTouchStart(e) {
+    // iOS BGM unlock: play() は最初のユーザー操作内で呼ぶ必要がある
+    if (window.audioManager) window.audioManager.unlock();
+
     if (this.state === 'start')    { this.startGame();    return; }
     if (this.state === 'gameover') { this.continueGame(); return; }
     if (this.state === 'clear')    { this.startGame();    return; }
@@ -605,12 +616,16 @@ class Game {
         return;
       }
 
-      this.touchPos = { x: tx, y: ty };
+      // 自機の上でタッチを開始した場合のみ追従を開始する
+      if (this._isTouchOnPlayer(tx, ty)) {
+        this._touchingPlayer = true;
+        this.touchPos = { x: tx, y: ty };
+      }
     }
   }
 
   _onTouchMove(e) {
-    if (this.state !== 'playing' || this._paused) return;
+    if (this.state !== 'playing' || this._paused || !this._touchingPlayer) return;
     const touch = e.touches[0];
     if (!touch) return;
     const rect = this.canvas.getBoundingClientRect();
@@ -623,6 +638,7 @@ class Game {
   startGame() {
     this.score = 0;
     this.touchPos = null;
+    this._touchingPlayer = false;
     this.player.reset();
     this.enemies = [];
     this.particles = [];
@@ -641,6 +657,8 @@ class Game {
   }
 
   continueGame() {
+    this.touchPos = null;
+    this._touchingPlayer = false;
     const px = this.player.x;
     const py = this.player.y;
     this.player.reset();
