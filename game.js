@@ -594,15 +594,15 @@ class Game {
   }
 
   _onTouchStart(e) {
-    // iOS BGM unlock: play() は最初のユーザー操作内で呼ぶ必要がある
-    if (window.audioManager) window.audioManager.unlock();
-
     if (this.state === 'start')    { this.startGame();    return; }
     if (this.state === 'gameover') { this.continueGame(); return; }
     if (this.state === 'clear')    { this.startGame();    return; }
 
     if (this.state === 'playing') {
       if (this._paused) { this._togglePause(); return; }
+
+      // 初回 play() が失敗していた場合、ユーザー操作のタイミングで再試行
+      if (window.audioManager) window.audioManager.retryBGM();
 
       const touch = e.touches[0];
       if (!touch) return;
