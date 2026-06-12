@@ -572,7 +572,15 @@ class Game {
     const opts = { passive: false };
     canvas.addEventListener('touchstart', e => { e.preventDefault(); this._onTouchStart(e); }, opts);
     canvas.addEventListener('touchmove',  e => { e.preventDefault(); this._onTouchMove(e);  }, opts);
-    canvas.addEventListener('touchend',   e => { e.preventDefault(); this.touchPos = null; this._touchingPlayer = false; }, opts);
+    canvas.addEventListener('touchend', e => {
+      e.preventDefault();
+      this.touchPos = null;
+      this._touchingPlayer = false;
+      // touchend は touchstart より確実なジェスチャーコンテキスト。初回 play() 失敗時の保険
+      if (this.state === 'playing' && !this._paused && window.audioManager) {
+        window.audioManager.retryBGM();
+      }
+    }, opts);
 
     canvas.setAttribute('tabindex', '0');
     canvas.focus();

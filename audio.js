@@ -5,18 +5,19 @@ class AudioManager {
     this._ac = null;
     this._master = null;
     this._bgm = null;
-    // Preload both tracks
     this._tracks = {
       normal: Object.assign(new Audio('bgm.mp3'),  { loop: true, volume: 0.5 }),
       boss:   Object.assign(new Audio('bgm2.mp3'), { loop: true, volume: 0.5 }),
     };
+    // ネットワーク読み込みを先行開始（ユーザー操作前でも可）
+    for (const t of Object.values(this._tracks)) t.load();
   }
 
-  // 初回 play() 失敗時の再試行（ユーザー操作のタイミングで呼ぶ）
+  // ユーザー操作のタイミングで再試行（touchend など確実なジェスチャーから呼ぶ）
   retryBGM() {
-    if (this._bgm && this._bgm.paused) {
-      this._bgm.play().catch(() => {});
-    }
+    if (!this._bgm || !this._bgm.paused) return;
+    this._init(); this._resume(); // AudioContext 初期化も同時に行う
+    this._bgm.play().catch(() => {});
   }
 
   _init() {
@@ -34,11 +35,14 @@ class AudioManager {
   // ── BGM ───────────────────────────────────────────────────────────────────
 
   _playBGM(key) {
+    // AudioContext 初期化: Chrome はこれで HTML audio も同時にアンロックされる
+    this._init(); this._resume();
     if (this._bgm) {
       this._bgm.pause();
       this._bgm.currentTime = 0;
     }
     this._bgm = this._tracks[key];
+    this._bgm.currentTime = 0;
     this._bgm.play().catch(() => {});
   }
 
